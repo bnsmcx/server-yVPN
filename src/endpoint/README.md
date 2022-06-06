@@ -2,13 +2,13 @@
 
 This is the endpoint or exit node of the yourVPN framework.  It consists of code to handle the following:
 
-1] Startup script that runs on droplet creation
+1. Startup script that runs on droplet creation
   - Performs `apt update && apt upgrade -y`
   - Validates that fastAPI service is running
   - Validates that wireguard is running
   - validates that the ufw firewall is configured and enabled
 
-2] fastAPI server with one endpoint: `/key_exchange`
+2. fastAPI server with one endpoint: `/key_exchange`
   - `POST` request requires:
     - User's bearer token
     - User's client wireguard public key

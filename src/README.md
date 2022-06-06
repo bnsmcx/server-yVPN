@@ -6,20 +6,20 @@ The developmental focus will be on the code for the endpoints and the command an
 
 ## Envisioned Flow
 
-1] User sets an environment variable with their token
-2] User runs the `yvpn-client connect` command from their terminal
-3] `yvpn-client` calls the command and control server (`cc-server`) `yourvpn.info/get-endpoint`
-4] `cc-server` calls the digital ocean API to create a new `vpn-endpoint`
-5] `cc-server` calls the digital ocean API to get the new `vpn-endpoint`'s IP address
-6] `cc-server` returns the new `vpn-endpoint`'s IP address to `yvpn-client`
-7] `yvpn-client` calls the `vpn-endpoint`'s `/key-exchange` endpoint
-8] `vpn-endpoint` validate's the user's token with the `cc-server`
-9] `vpn-endpoint` configures and activates the wireguard server
-10] `vpn-endpoint` returns `wg0.conf` to `yvpn-client`
-11] `yvpn-client` finalizes `wg0.conf` and initiates the wg tunnel
+1. User sets an environment variable with their token
+2. User runs the `yvpn-client connect` command from their terminal
+3. `yvpn-client` calls the command and control server (`cc-server`) `yourvpn.info/get-endpoint`
+4. `cc-server` calls the digital ocean API to create a new `vpn-endpoint`
+5. `cc-server` calls the digital ocean API to get the new `vpn-endpoint`'s IP address
+6. `cc-server` returns the new `vpn-endpoint`'s IP address to `yvpn-client`
+7. `yvpn-client` calls the `vpn-endpoint`'s `/key-exchange` endpoint
+8. `vpn-endpoint` validate's the user's token with the `cc-server`
+9. `vpn-endpoint` configures and activates the wireguard server
+10. `vpn-endpoint` returns `wg0.conf` to `yvpn-client`
+11. `yvpn-client` finalizes `wg0.conf` and initiates the wg tunnel
 
 ***User completes their session.***
 
-12] User runs the `yvpn-client disconnect` command from their terminal
-13] `yvpn-client` calls the `cc-server`'s `/kill` endpoint
-14] `cc-server` calls digital ocean api and kills all instances of `vpn-endpoint`
+12. User runs the `yvpn-client disconnect` command from their terminal
+13. `yvpn-client` calls the `cc-server`'s `/kill` endpoint
+14. `cc-server` calls digital ocean api and kills all instances of `vpn-endpoint`
