@@ -1,11 +1,44 @@
-#!/usr/bin/env python3
+import typer
 
-import requests
+app = typer.Typer()
 
-url = "http://165.22.102.167:8000/key-exchange"
-data = '{"pubkey": "token", "ip": "10.0.0.2"}'
-header = "\"Content-Type: application/json\""
 
-request = requests.post(url=url, data=data)
+@app.command()
+def create():
+    """CREATE a new VPN endpoint"""
+    pass
 
-print(request.json())
+
+@app.command()
+def connect():
+    """CONNECT to your active endpoint"""
+    pass
+
+
+@app.command()
+def disconnect():
+    """DISCONNECT from your endpoint"""
+    pass
+
+
+@app.command()
+def destroy():
+    """permanently DESTROY your endpoint"""
+    pass
+
+
+@app.command()
+def status():
+    """display connection, usage and endpoint info"""
+    pass
+
+
+def wireguard_installed():
+    return True
+
+
+if __name__ == "__main__":
+    if wireguard_installed():
+        app()
+    else:
+        typer.echo("[!] error: wireguard not found, install from apt and retry")
