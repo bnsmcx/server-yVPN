@@ -24,13 +24,13 @@ def create():
 @app.command()
 def connect():
     """CONNECT to your active endpoint"""
-    pass
+    os.system("sudo wg-quick up wg0")
 
 
 @app.command()
 def disconnect():
     """DISCONNECT from your endpoint"""
-    pass
+    os.system("sudo wg-quick down wg0")
 
 
 @app.command()
