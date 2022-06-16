@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pathlib import Path
 from paramiko import SSHClient
 from getpass import getpass
@@ -100,7 +102,6 @@ def configure_wireguard_client(server_public_key: str,
     config_file = "/etc/wireguard/wg0.conf"
     os.system(f"sudo touch {config_file}")
     os.system(f"sudo chmod 666 {config_file}")
-    print("\n".join(config))
     with open(config_file, "w") as f:
         f.write("\n".join(config))
     os.system(f"sudo chmod 600 {config_file}")
