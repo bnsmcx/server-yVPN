@@ -45,6 +45,17 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
+@app.post("/create", response_model=schemas.Endpoint)
+def create_endpoint(endpoint_details: schemas.EndpointCreate,
+                    user_token: str,
+                    db: Session = Depends(get_db)):
+    if not crud.valid_user(db, user_token):
+        raise HTTPException(status_code=404, detail="Invalid user token")
+    else:
+        endpoint = crud.create_new_endpoint(db)
+        return endpoint
+
+
 @app.get("/datacenters", response_model=schemas.DataCenters)
 def get_available_datacenters():
     header = {"Authorization": f"Bearer {DO_TOKEN}"}

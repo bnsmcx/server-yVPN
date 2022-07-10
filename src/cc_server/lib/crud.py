@@ -17,8 +17,14 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 def create_user(db: Session, user: schemas.UserCreate):
     fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    db_user = models.User(email=user.email, token="yeet",
+                          hashed_password=fake_hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def valid_user(db, user_token) -> bool:
+    query_result = db.query(models.User).filter(models.User.token == user_token).first()
+    return isinstance(query_result, models.User)
