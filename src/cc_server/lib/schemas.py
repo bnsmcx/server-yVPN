@@ -5,6 +5,18 @@ class DataCenters(BaseModel):
     available: list[str]
 
 
+class Endpoint(BaseModel):
+    server_ip: str
+    
+    
+class EndpointCreate(Endpoint):
+    name: str
+    region: str
+    size: str
+    image: str
+    ssh_fingerprint: str
+
+
 class UserBase(BaseModel):
     email: str
 
