@@ -1,6 +1,6 @@
 import requests
 
-from lib import schemas
+from . import schemas
 
 def get_available_datacenters(token: str) -> schemas.DataCenters:
     header = {"Authorization": f"Bearer {token}"}
