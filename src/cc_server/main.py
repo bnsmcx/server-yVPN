@@ -4,7 +4,7 @@ import requests
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from lib import crud, models, schemas
+from lib import crud, models, schemas, digital_ocean
 from lib.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -58,11 +58,4 @@ def create_endpoint(endpoint_details: schemas.EndpointCreate,
 
 @app.get("/datacenters", response_model=schemas.DataCenters)
 def get_available_datacenters():
-    header = {"Authorization": f"Bearer {DO_TOKEN}"}
-    regions_raw = requests.get(url="https://api.digitalocean.com/v2/regions",
-                               headers=header).json()["regions"]
-    regions = []
-    for region in regions_raw:
-        regions.append(region["slug"])
-
-    return schemas.DataCenters(**{'available': regions})
+    return digital_ocean.get_available_datacenters(DO_TOKEN)
