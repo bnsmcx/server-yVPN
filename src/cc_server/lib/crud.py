@@ -1,3 +1,5 @@
+import random
+
 from fastapi import HTTPException
 from typing import Tuple
 
@@ -34,25 +36,33 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def validate_endpoint_creation_request(
-        settings: schemas.EndpointCreate) -> Tuple[bool, str]:
+        settings: schemas.EndpointCreate) -> Tuple[bool, str, schemas.EndpointCreate]:
     available_datacenters = digital_ocean.get_available_datacenters().available
-    print(settings.region != "random")
     if settings.region != "random" and settings.region not in available_datacenters:
         return (False, f"Datacenter '{settings.region}' not available."
                        f" Try 'random' or one of these: {sorted(available_datacenters)}")
     if len(settings.ssh_fingerprint) < 1:
         return (False, "SSH fingerprint required.")
-    return (True, "")
+    if settings.region == "random":
+        settings.region = random.choice(available_datacenters)
+    return (True, "", settings)
 
 
 def create_new_endpoint(db: Session,
-                        settings: schemas.EndpointCreate) -> schemas.Endpoint:
+                        settings: schemas.EndpointCreate,
+                        user_token: str) -> schemas.Endpoint:
     # validate the new endpoint settings
-    valid_request, error = validate_endpoint_creation_request(settings)
+    valid_request, error, settings = validate_endpoint_creation_request(settings)
     if not valid_request:
         raise HTTPException(status_code=404, detail=error)
 
+    # get user_id and endpoint count for name
+    user = db.query(models.User).filter(models.User.token == user_token).first()
+    endpoint_name = f"{user.id}_{user.endpoint_count}"
+    print(endpoint_name)
+
     # send the creation request to DO
+    # response = digital_ocean.create_droplet(settings)
 
     # await the droplet id, indicating it is being created
 

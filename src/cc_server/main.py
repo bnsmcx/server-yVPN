@@ -41,13 +41,13 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/create", response_model=schemas.Endpoint)
-def create_endpoint(endpoint_details: schemas.EndpointCreate,
+def create_endpoint(settings: schemas.EndpointCreate,
                     user_token: str,
                     db: Session = Depends(get_db)):
     if not crud.valid_user(db, user_token):
         raise HTTPException(status_code=404, detail="Invalid user token")
     else:
-        endpoint = crud.create_new_endpoint(db, endpoint_details)
+        endpoint = crud.create_new_endpoint(db, settings, user_token)
         return endpoint
 
 
