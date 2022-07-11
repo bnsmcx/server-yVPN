@@ -1,9 +1,13 @@
+import os
 import requests
 
 from . import schemas
 
-def get_available_datacenters(token: str) -> schemas.DataCenters:
-    header = {"Authorization": f"Bearer {token}"}
+DO_TOKEN = os.environ['DIGITALOCEAN_TOKEN']
+
+
+def get_available_datacenters() -> schemas.DataCenters:
+    header = {"Authorization": f"Bearer {DO_TOKEN}"}
     regions_raw = requests.get(url="https://api.digitalocean.com/v2/regions",
                                headers=header).json()["regions"]
     regions = []

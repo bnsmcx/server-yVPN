@@ -1,6 +1,3 @@
-import os
-import requests
-
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,8 +5,6 @@ from lib import crud, models, schemas, digital_ocean
 from lib.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
-
-DO_TOKEN = os.environ['DIGITALOCEAN_TOKEN']
 
 app = FastAPI()
 
@@ -52,10 +47,10 @@ def create_endpoint(endpoint_details: schemas.EndpointCreate,
     if not crud.valid_user(db, user_token):
         raise HTTPException(status_code=404, detail="Invalid user token")
     else:
-        endpoint = crud.create_new_endpoint(db)
+        endpoint = crud.create_new_endpoint(db, endpoint_details)
         return endpoint
 
 
 @app.get("/datacenters", response_model=schemas.DataCenters)
 def get_available_datacenters():
-    return digital_ocean.get_available_datacenters(DO_TOKEN)
+    return digital_ocean.get_available_datacenters()
