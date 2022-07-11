@@ -9,11 +9,8 @@ class Endpoint(BaseModel):
     server_ip: str
     
     
-class EndpointCreate(Endpoint):
-    name: str
+class EndpointCreate(BaseModel):
     region: str
-    size: str
-    image: str
     ssh_fingerprint: str
 
 
