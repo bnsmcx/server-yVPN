@@ -20,10 +20,9 @@ class User(Base):
 class Endpoint(Base):
     __tablename__ = "endpoints"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
+    droplet_id = Column(Integer, primary_key=True, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    server_ip = Column(String)
 
     owner = relationship("User", back_populates="endpoints")
 
