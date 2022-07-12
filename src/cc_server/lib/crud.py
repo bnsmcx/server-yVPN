@@ -39,10 +39,12 @@ def validate_endpoint_creation_request(
         settings: schemas.EndpointCreate) -> Tuple[bool, str, schemas.EndpointCreate]:
     available_datacenters = digital_ocean.get_available_datacenters().available
     if settings.region != "random" and settings.region not in available_datacenters:
-        return (False, f"Datacenter '{settings.region}' not available."
-                       f" Try 'random' or one of these: {sorted(available_datacenters)}")
-    if len(settings.ssh_fingerprint) < 1:
-        return (False, "SSH fingerprint required.")
+        return (False,
+                f"Datacenter '{settings.region}' not available."
+                f" Try 'random' or one of these: {sorted(available_datacenters)}",
+                settings)
+    if len(settings.ssh_pub_key) < 1:
+        return (False, "SSH public key required.", settings)
     if settings.region == "random":
         settings.region = random.choice(available_datacenters)
     return (True, "", settings)
@@ -58,13 +60,16 @@ def create_new_endpoint(db: Session,
 
     # get user_id and endpoint count for name
     user = db.query(models.User).filter(models.User.token == user_token).first()
-    endpoint_name = f"{user.id}_{user.endpoint_count}"
-    print(endpoint_name)
+    endpoint_name = f"{user.id}-{user.endpoint_count}-{settings.region}"
 
-    # send the creation request to DO
-    # response = digital_ocean.create_droplet(settings)
+    # set the ssh key for endpoint creation
+    ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
 
-    # await the droplet id, indicating it is being created
+    # send the creation request to DO, get the droplet id
+    droplet_id = digital_ocean.create_droplet(endpoint_name, ssh_key_id, settings)
+
+    # delete the ssh key from DO
+    digital_ocean.delete_ssh_key(ssh_key_id)
 
     # request status of creation
 

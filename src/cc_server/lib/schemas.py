@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel
 
 
@@ -11,7 +12,7 @@ class Endpoint(BaseModel):
     
 class EndpointCreate(BaseModel):
     region: str
-    ssh_fingerprint: str
+    ssh_pub_key: str
 
 
 class UserBase(BaseModel):
