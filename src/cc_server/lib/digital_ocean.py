@@ -1,4 +1,6 @@
 import os
+import time
+
 import requests
 
 from . import schemas
@@ -60,3 +62,26 @@ def delete_ssh_key(ssh_key_id):
                 headers=HEADER)
     if response.status_code != 204:
         print(response.json())
+
+
+def extract_ip_from_droplet_json(response: dict) -> str:
+    droplet_networks = response["droplet"]["networks"]["v4"]
+    for network in droplet_networks:
+        if network["type"] == "public":
+            return network["ip_address"]
+
+
+def get_droplet_ip(droplet_id: int) -> str | None:
+    while True:
+        response = requests \
+            .get(url=f"https://api.digitalocean.com/v2/droplets/{droplet_id}",
+                 headers=HEADER)
+        if response.status_code != 200:
+            print(f"\n***{response.status_code}***\n\n{response.json()}\n")  # DEBUG
+            return None
+        elif response.json()["droplet"]["status"] != "active":
+            print(response.status_code)
+            time.sleep(1)
+            continue
+
+        return extract_ip_from_droplet_json(response.json())
