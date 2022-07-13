@@ -1,5 +1,7 @@
-import os
+from fastapi import HTTPException
+
 import time
+import os
 
 import requests
 
@@ -33,14 +35,13 @@ def create_droplet(endpoint_name: str,
         ],
     }
 
-    for _ in range(3):  # TODO: make it impossible to get caught in an infinite loop
-        response = requests.post(json=request,
-                                 url="https://api.digitalocean.com/v2/droplets",
-                                 headers=HEADER).json()
-        if "droplet" in response:
-            return response["droplet"]["id"]
-        else:
-            print(response)
+    response = requests.post(json=request,
+                             url="https://api.digitalocean.com/v2/droplets",
+                             headers=HEADER).json()
+    if "droplet" in response:
+        return response["droplet"]["id"]
+    else:
+        raise HTTPException(status_code=404, detail=response)
 
 
 def set_ssh_key(endpoint_name: str, ssh_pub_key: str) -> int:
@@ -52,7 +53,7 @@ def set_ssh_key(endpoint_name: str, ssh_pub_key: str) -> int:
                              url="https://api.digitalocean.com/v2/account/keys",
                              headers=HEADER)
     if response.status_code != 201:
-        print(response.json())
+        raise HTTPException(status_code=404, detail=response.json())
     return response.json()["ssh_key"]["id"]
 
 
@@ -71,16 +72,18 @@ def extract_ip_from_droplet_json(response: dict) -> str:
             return network["ip_address"]
 
 
-def get_droplet_ip(droplet_id: int) -> str | None:
+def get_droplet_ip(droplet_id: int) -> str:
     while True:
         response = requests \
             .get(url=f"https://api.digitalocean.com/v2/droplets/{droplet_id}",
                  headers=HEADER)
         if response.status_code != 200:
             print(f"\n***{response.status_code}***\n\n{response.json()}\n")  # DEBUG
-            return None
+            raise HTTPException(status_code=response.status_code,
+                                detail=response.json())
         elif response.json()["droplet"]["status"] != "active":
             time.sleep(1)
             continue
 
-        return extract_ip_from_droplet_json(response.json())
+        droplet_ip = extract_ip_from_droplet_json(response.json())
+        return droplet_ip
