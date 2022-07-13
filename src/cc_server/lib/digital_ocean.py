@@ -90,7 +90,5 @@ def get_droplet_ip(droplet_id: int) -> str:
 
 
 def delete_droplet(droplet_id: str):
-    response = requests.delete(url=f"https://api.digitalocean.com/v2/droplets/{droplet_id}",
-                               headers=HEADER)
-    print(droplet_id)
-    print(response.json())
+    requests.delete(url=f"https://api.digitalocean.com/v2/droplets/{droplet_id}",
+                    headers=HEADER)

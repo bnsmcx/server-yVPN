@@ -84,7 +84,8 @@ def create_new_endpoint(db: Session,
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     db_endpoint = models.Endpoint(server_ip=endpoint_ip,
                                   owner_id=user.id,
-                                  endpoint_name=endpoint_name)
+                                  endpoint_name=endpoint_name,
+                                  droplet_id=droplet_id)
 
     # add to db, update user's endpoint count, and return Endpoint
     db.add(db_endpoint)
