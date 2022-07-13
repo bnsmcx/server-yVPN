@@ -55,6 +55,14 @@ def validate_endpoint_creation_request(
     return (True, "", settings)
 
 
+def update_user_endpoint_count(db: Session, user_id: int):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user.endpoint_count = len(user.endpoints)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+
 def create_new_endpoint(db: Session,
                         settings: schemas.EndpointCreate,
                         user_token: str) -> schemas.Endpoint:
@@ -65,16 +73,21 @@ def create_new_endpoint(db: Session,
         raise HTTPException(status_code=404, detail=error)
 
     # name endpoint, set the ssh key, request droplet creation, delete ssh key
-    endpoint_name = f"{user.id}-{user.endpoint_count}-{settings.region}"
+    endpoint_name = f"{user.id}-{user.endpoint_count + 1}-{settings.region}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
-    droplet_id = digital_ocean.create_droplet(endpoint_name, ssh_key_id, settings)
-    digital_ocean.delete_ssh_key(ssh_key_id)
+    try:
+        droplet_id = digital_ocean.create_droplet(endpoint_name, ssh_key_id, settings)
+    finally:
+        digital_ocean.delete_ssh_key(ssh_key_id)
 
-    # get new endpoint's ip, create Endpoint obj, add to db and return it
+    # get new endpoint's ip, create Endpoint obj
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     db_endpoint = models.Endpoint(server_ip=endpoint_ip,
                                   owner_id=user.id)
+
+    # add to db, update user's endpoint count, and return Endpoint
     db.add(db_endpoint)
     db.commit()
     db.refresh(db_endpoint)
+    update_user_endpoint_count(db, user.id)
     return schemas.Endpoint(server_ip=db_endpoint.server_ip)
