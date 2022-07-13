@@ -9,6 +9,7 @@ class DataCenters(BaseModel):
 
 class Endpoint(BaseModel):
     server_ip: str
+    endpoint_name: str
 
     class Config:
         orm_mode = True

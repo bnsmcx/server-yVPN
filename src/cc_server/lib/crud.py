@@ -1,7 +1,7 @@
 import random
 
 from fastapi import HTTPException
-from typing import Tuple
+from typing import Tuple, List
 
 from sqlalchemy.orm import Session
 
@@ -16,9 +16,9 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-# def get_user_by_token(db: Session, user_token: str) -> int:
-#     user = db.query(models.User).filter(models.User.token == user_token).first()
-#     return user.id
+def get_user_by_token(db: Session, user_token: str) -> models.User:
+    user = db.query(models.User).filter(models.User.token == user_token).first()
+    return user
 
 
 def get_users(db: Session, skip: int = 0, limit: int = 100):
@@ -83,11 +83,18 @@ def create_new_endpoint(db: Session,
     # get new endpoint's ip, create Endpoint obj
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     db_endpoint = models.Endpoint(server_ip=endpoint_ip,
-                                  owner_id=user.id)
+                                  owner_id=user.id,
+                                  endpoint_name=endpoint_name)
 
     # add to db, update user's endpoint count, and return Endpoint
     db.add(db_endpoint)
     db.commit()
     db.refresh(db_endpoint)
     update_user_endpoint_count(db, user.id)
-    return schemas.Endpoint(server_ip=db_endpoint.server_ip)
+    return schemas.Endpoint(server_ip=db_endpoint.server_ip,
+                            endpoint_name=db_endpoint.endpoint_name)
+
+
+def get_user_endpoints(db: Session, user_token: str) -> List[schemas.Endpoint]:
+    user = get_user_by_token(db, user_token)
+    return user.endpoints

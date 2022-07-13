@@ -23,6 +23,7 @@ class Endpoint(Base):
     droplet_id = Column(Integer, primary_key=True, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     server_ip = Column(String)
+    endpoint_name = Column(String)
 
     owner = relationship("User", back_populates="endpoints")
 

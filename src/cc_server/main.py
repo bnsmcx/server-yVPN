@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
@@ -54,3 +56,10 @@ def create_endpoint(settings: schemas.EndpointCreate,
 @app.get("/datacenters", response_model=schemas.DataCenters)
 def get_available_datacenters():
     return digital_ocean.get_available_datacenters()
+
+
+@app.get("/status", response_model=List[schemas.Endpoint])
+def get_user_status(user_token: str, db: Session = Depends(get_db)):
+    user_endpoints = crud.get_user_endpoints(db, user_token)
+    return user_endpoints
+
