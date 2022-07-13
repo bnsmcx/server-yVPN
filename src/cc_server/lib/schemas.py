@@ -1,3 +1,4 @@
+from typing import List
 
 from pydantic import BaseModel
 
@@ -8,6 +9,9 @@ class DataCenters(BaseModel):
 
 class Endpoint(BaseModel):
     server_ip: str
+
+    class Config:
+        orm_mode = True
     
     
 class EndpointCreate(BaseModel):
@@ -26,6 +30,8 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+    endpoint_count: int
+    endpoints: List[Endpoint]
 
     class Config:
         orm_mode = True

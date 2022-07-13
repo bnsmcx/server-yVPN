@@ -80,7 +80,6 @@ def get_droplet_ip(droplet_id: int) -> str | None:
             print(f"\n***{response.status_code}***\n\n{response.json()}\n")  # DEBUG
             return None
         elif response.json()["droplet"]["status"] != "active":
-            print(response.status_code)
             time.sleep(1)
             continue
 
