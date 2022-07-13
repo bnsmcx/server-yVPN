@@ -63,3 +63,9 @@ def get_user_status(user_token: str, db: Session = Depends(get_db)):
     user_endpoints = crud.get_user_endpoints(db, user_token)
     return user_endpoints
 
+
+@app.delete("/endpoint")
+def delete_endpoint(user_token: str,
+                    endpoint_name: str,
+                    db: Session = Depends(get_db)):
+    crud.delete_endpoint(user_token, endpoint_name, db)

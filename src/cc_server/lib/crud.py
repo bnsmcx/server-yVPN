@@ -98,3 +98,14 @@ def create_new_endpoint(db: Session,
 def get_user_endpoints(db: Session, user_token: str) -> List[schemas.Endpoint]:
     user = get_user_by_token(db, user_token)
     return user.endpoints
+
+
+def delete_endpoint(user_token, endpoint_name, db):
+    if not valid_user(db, user_token):
+        raise HTTPException(status_code=401, detail="Invalid user token.")
+    endpoint = db.query(models.Endpoint)\
+        .filter(models.Endpoint.endpoint_name == endpoint_name)
+    droplet_id = endpoint.first().droplet_id
+    digital_ocean.delete_droplet(droplet_id)
+    endpoint.delete()
+    update_user_endpoint_count(db, get_user_by_token(db, user_token).id)
