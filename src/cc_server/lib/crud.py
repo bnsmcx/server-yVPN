@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas, digital_ocean
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> models.User | None:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
@@ -102,8 +102,6 @@ def get_user_endpoints(db: Session, user_token: str) -> List[schemas.Endpoint]:
 
 
 def delete_endpoint(user_token, endpoint_name, db):
-    if not valid_user(db, user_token):
-        raise HTTPException(status_code=401, detail="Invalid user token.")
     endpoint = db.query(models.Endpoint)\
         .filter(models.Endpoint.endpoint_name == endpoint_name)
     droplet_id = endpoint.first().droplet_id
