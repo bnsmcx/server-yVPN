@@ -1,3 +1,15 @@
+"""
+Pydantic datamodels
+
+Classes (models):
+    DataCenters
+    Endpoint
+    EndpointCreate
+    UserBase
+    UserCreate
+    User
+"""
+
 from typing import List
 
 from pydantic import BaseModel
