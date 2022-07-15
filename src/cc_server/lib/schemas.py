@@ -9,6 +9,7 @@ Classes (models):
     UserCreate
     User
 """
+# pylint: skip-file
 
 from typing import List
 

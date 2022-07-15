@@ -1,3 +1,12 @@
+"""
+sqlalchemy models
+
+Classes:
+    User
+    Endpoint
+"""
+# pylint: skip-file
+
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -5,6 +14,7 @@ from .database import Base
 
 
 class User(Base):
+    """ORM model for a user"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -18,6 +28,7 @@ class User(Base):
 
 
 class Endpoint(Base):
+    """ORM model for an Endpoint"""
     __tablename__ = "endpoints"
 
     droplet_id = Column(Integer, primary_key=True, index=True)
@@ -26,4 +37,3 @@ class Endpoint(Base):
     endpoint_name = Column(String)
 
     owner = relationship("User", back_populates="endpoints")
-
