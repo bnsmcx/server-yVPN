@@ -12,6 +12,8 @@ Functions:
 """
 import os
 import time
+import random
+from typing import Tuple
 
 import requests
 from fastapi import HTTPException
@@ -36,8 +38,11 @@ def get_available_datacenters() -> schemas.DataCenters:
 
 def create_droplet(endpoint_name: str,
                    ssh_key_id: int,
-                   settings: schemas.EndpointCreate) -> int:
+                   settings: schemas.EndpointCreate) -> Tuple[int, str]:
     """create a new droplet with user's ssh pubkey, return droplet id"""
+
+    random_region = settings.region == "random"
+
     image_id = ENDPOINT_IMAGE
     request = {
         "name": f"{endpoint_name}",
@@ -49,13 +54,29 @@ def create_droplet(endpoint_name: str,
         ],
     }
 
+    current_region = request["region"]
+
+    while random_region:
+        request["region"] = random.choice(get_available_datacenters().available)
+        request["name"] = request["name"].replace(current_region, request["region"])
+
+        response = requests.post(json=request,
+                                 url="https://api.digitalocean.com/v2/droplets",
+                                 headers=HEADER)
+        if response.status_code != 202:
+            continue
+        response = response.json()
+        return response["droplet"]["id"], response["droplet"]["name"]
+
     response = requests.post(json=request,
                              url="https://api.digitalocean.com/v2/droplets",
                              headers=HEADER)
 
     if response.status_code != 202:
         raise HTTPException(status_code=404, detail=response.json())
-    return response.json()["droplet"]["id"]
+
+    response = response.json()
+    return response["droplet"]["id"], response["droplet"]["name"]
 
 
 def set_ssh_key(endpoint_name: str, ssh_pub_key: str) -> int:

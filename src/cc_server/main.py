@@ -16,7 +16,7 @@ Functions -- Internal Utility:
 
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
 from lib import crud, models, schemas, digital_ocean
@@ -69,7 +69,7 @@ def get_available_datacenters(user_token: str,
     return digital_ocean.get_available_datacenters()
 
 
-@app.get("/status")
+@app.get("/status", response_model=List[schemas.Endpoint])
 def get_token_status(token: str, database: Session = Depends(_get_database)):
     """get a user's usage summary"""
     crud.validate_token(database, token, False)

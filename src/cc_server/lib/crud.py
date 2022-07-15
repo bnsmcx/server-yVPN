@@ -106,8 +106,6 @@ def validate_endpoint_creation_request(
                 settings)
     if len(settings.ssh_pub_key) < 1:
         return False, "SSH public key required.", settings
-    if settings.region == "random":
-        settings.region = random.choice(available_datacenters)
     return True, "", settings
 
 
@@ -135,7 +133,8 @@ def create_new_endpoint(database: Session,
     endpoint_name = f"{user.id}-{user.endpoint_count + 1}-{settings.region}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
     try:
-        droplet_id = digital_ocean.create_droplet(endpoint_name, ssh_key_id, settings)
+        droplet_id, endpoint_name = digital_ocean\
+            .create_droplet(endpoint_name, ssh_key_id, settings)
     finally:
         digital_ocean.delete_ssh_key(ssh_key_id)
 
