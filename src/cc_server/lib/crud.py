@@ -57,7 +57,7 @@ def is_expired(expiration_date: str):
     return datetime.now(tz=timezone.utc) > expiration_date.replace(tzinfo=timezone.utc)
 
 
-def validate_token(database: Session, token: str):
+def validate_token(database: Session, token: str, creation_op: bool):
     """check if a token is valid"""
     query_result = database.query(models.Token) \
         .filter(models.Token.token == token) \
@@ -65,9 +65,9 @@ def validate_token(database: Session, token: str):
 
     if not isinstance(query_result, models.Token):
         raise HTTPException(status_code=404, detail="Token not found.")
-    if query_result.funds_available <= 0:
+    if creation_op and query_result.funds_available <= 0:
         raise HTTPException(status_code=401, detail="Insufficient funds.")
-    if is_expired(query_result.expiration):
+    if creation_op and is_expired(query_result.expiration):
         raise HTTPException(status_code=401, detail="Token is expired.")
 
 
