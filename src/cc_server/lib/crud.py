@@ -36,12 +36,12 @@ def get_user_by_email(database: Session, email: str) -> models.Token | None:
     return database.query(models.Token).filter(models.Token.email == email).first()
 
 
-def get_user_by_token(database: Session, user_token: str) -> models.Token | None:
-    """get a user by new_token_request"""
-    user = database.query(models.Token) \
-        .filter(models.Token.token == user_token) \
+def get_token_db_record(database: Session, token: str) -> models.Token | None:
+    """get a token record from the database"""
+    token = database.query(models.Token) \
+        .filter(models.Token.token == token) \
         .first()
-    return user
+    return token
 
 
 def get_users(database: Session,
@@ -155,10 +155,10 @@ def create_new_endpoint(database: Session,
                             endpoint_name=database_endpoint.endpoint_name)
 
 
-def get_user_endpoints(database: Session, user_token: str) -> List[schemas.Endpoint]:
-    """return a list of the user's endpoints"""
-    user = get_user_by_token(database, user_token)
-    return user.endpoints
+def get_endpoints_by_token(database: Session, token: str) -> List[schemas.Endpoint]:
+    """return a list of the token's endpoints"""
+    token = get_token_db_record(database, token)
+    return token.endpoints
 
 
 def delete_endpoint(user_token, endpoint_name, database):
@@ -168,4 +168,4 @@ def delete_endpoint(user_token, endpoint_name, database):
     droplet_id = endpoint.first().droplet_id
     digital_ocean.delete_droplet(droplet_id)
     endpoint.delete()
-    update_user_endpoint_count(database, get_user_by_token(database, user_token).id)
+    update_user_endpoint_count(database, get_token_db_record(database, user_token).id)

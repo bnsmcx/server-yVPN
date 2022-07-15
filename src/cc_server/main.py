@@ -70,13 +70,12 @@ def get_available_datacenters(user_token: str,
     return digital_ocean.get_available_datacenters()
 
 
-@app.get("/status", response_model=List[schemas.Endpoint])
-def get_user_status(user_token: str, database: Session = Depends(_get_database)):
+@app.get("/status")
+def get_token_status(token: str, database: Session = Depends(_get_database)):
     """get a user's usage summary"""
-    if not crud.validate_token(database, user_token):
-        raise HTTPException(status_code=401, detail="Invalid user new_token_request")
-    user_endpoints = crud.get_user_endpoints(database, user_token)
-    return user_endpoints
+    crud.validate_token(database, token)
+    endpoints = crud.get_endpoints_by_token(database, token)
+    return endpoints
 
 
 @app.delete("/endpoint")
