@@ -14,7 +14,7 @@ from .database import Base
 
 
 class Token(Base):
-    """ORM model for a user"""
+    """ORM model for a Token"""
     __tablename__ = "tokens"
 
     id = Column(Integer, primary_key=True, index=True)

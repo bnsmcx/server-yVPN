@@ -39,7 +39,7 @@ def get_available_datacenters() -> schemas.DataCenters:
 def create_droplet(endpoint_name: str,
                    ssh_key_id: int,
                    settings: schemas.EndpointCreate) -> Tuple[int, str]:
-    """create a new droplet with user's ssh pubkey, return droplet id"""
+    """create a new droplet with token's ssh pubkey, return droplet id"""
 
     random_region = settings.region == "random"
 

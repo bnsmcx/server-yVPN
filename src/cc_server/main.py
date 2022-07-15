@@ -63,16 +63,16 @@ def create_endpoint(settings: schemas.EndpointCreate,
 
 
 @app.get("/datacenters", response_model=schemas.DataCenters)
-def get_available_datacenters(user_token: str,
+def get_available_datacenters(token: str,
                               database: Session = Depends(_get_database)):
     """get a list of available digital ocean datacenters"""
-    crud.validate_token(database, user_token, False)
+    crud.validate_token(database, token, False)
     return digital_ocean.get_available_datacenters()
 
 
 @app.get("/status", response_model=List[schemas.Endpoint])
 def get_token_status(token: str, database: Session = Depends(_get_database)):
-    """get a user's usage summary"""
+    """get a token's usage summary"""
     crud.validate_token(database, token, False)
     endpoints = crud.get_endpoints_by_token(database, token)
     return endpoints

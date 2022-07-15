@@ -2,17 +2,17 @@
 Create, Read, Update, and Delete (CRUD) utilities
 
 Functions:
-    get_user(database, token_id) -> models.Token | None
-    get_user_by_email(database, email)
-    get_user_by_token(database, token) -> models.Token
+    get_token(database, token_id) -> models.Token | None
+    get_token_by_email(database, email)
+    get_token_by_token(database, token) -> models.Token
     get_tokens(database, skip: int = 0, limit: int = 100)
     is_expired(expiration_date) -> bool
     validate_token(database, token: str) -> bool
-    create_user(database, user)
+    create_token(database, token)
     validate_endpoint_creation_request(settings) -> (bool, str, EndpointCreate)
     update_token_endpoint_count(database, token_id)
     create_new_endpoint(database, settings, token) -> Endpoint
-    get_user_endpoints(database, token) -> List[Endpoint]
+    get_token_endpoints(database, token) -> List[Endpoint]
     delete_endpoint(token, endpoint_name, database)
 """
 
@@ -37,7 +37,7 @@ def get_token_db_record(database: Session, token: str) -> models.Token | None:
 def get_tokens(database: Session,
                skip: int = 0,
                limit: int = 100) -> List[models.Token]:
-    """get a list of all users, skip and limit parameters slice"""
+    """get a list of all tokens, skip and limit parameters slice"""
     return database.query(models.Token).offset(skip).limit(limit).all()
 
 
@@ -71,7 +71,7 @@ def get_expiration_date(days_till_expiration: int) -> str:
 
 def create_token(database: Session,
                  request: schemas.TokenCreate) -> schemas.TokenInitialCreationResponse:
-    """create a new user"""
+    """create a new token"""
     new_token = f"cellar_door{random.random()}"  # TODO: implement new_token_request creation
     db_token_entry = models.Token(token=new_token,
                                   funds_available=request.funds,
@@ -100,7 +100,7 @@ def validate_endpoint_creation_request(
 
 
 def update_token_endpoint_count(database: Session, token_id: int) -> None:
-    """count and store the number of endpoints associated with a user"""
+    """count and store the number of endpoints associated with a token"""
     token = database.query(models.Token)\
         .filter(models.Token.id == token_id).first()
     token.endpoint_count = len(token.endpoints)
@@ -111,17 +111,17 @@ def update_token_endpoint_count(database: Session, token_id: int) -> None:
 
 def create_new_endpoint(database: Session,
                         settings: schemas.EndpointCreate,
-                        user_token: str) -> schemas.Endpoint:
+                        token: str) -> schemas.Endpoint:
     """create a new endpoint"""
 
-    # get user profile, validate the new endpoint settings
-    user = database.query(models.Token).filter(models.Token.token == user_token).first()
+    # get token db entry, validate the new endpoint settings
+    db_token = database.query(models.Token).filter(models.Token.token == token).first()
     valid_request, error, settings = validate_endpoint_creation_request(settings)
     if not valid_request:
         raise HTTPException(status_code=404, detail=error)
 
     # name endpoint, set the ssh key, request droplet creation, delete ssh key
-    endpoint_name = f"{user.id}-{user.endpoint_count + 1}-{settings.region}"
+    endpoint_name = f"{db_token.id}-{db_token.endpoint_count + 1}-{settings.region}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
     try:
         droplet_id, endpoint_name = digital_ocean\
@@ -132,15 +132,15 @@ def create_new_endpoint(database: Session,
     # get new endpoint's ip, create Endpoint obj
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     database_endpoint = models.Endpoint(server_ip=endpoint_ip,
-                                        owner_id=user.id,
+                                        owner_id=db_token.id,
                                         endpoint_name=endpoint_name,
                                         droplet_id=droplet_id)
 
-    # add to database, update user's endpoint count, and return Endpoint
+    # add to database, update token's endpoint count, and return Endpoint
     database.add(database_endpoint)
     database.commit()
     database.refresh(database_endpoint)
-    update_token_endpoint_count(database, user.id)
+    update_token_endpoint_count(database, db_token.id)
     return schemas.Endpoint(server_ip=database_endpoint.server_ip,
                             endpoint_name=database_endpoint.endpoint_name)
 
