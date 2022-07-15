@@ -2,12 +2,12 @@
 fastAPI app for the yourVPN rendezvous server.
 
 Functions -- API Endpoints:
-    create_user(user, database) -> Token
-    read_users(skip, limit, database) -> List[Token]
-    read_user(user_id, database) -> Token
+    create_token(token, database) -> Token
+    read_tokens(skip, limit, database) -> List[Token]
+    read_token(token_id, database) -> Token
     create_endpoint(settings, token, database) -> Endpoint
     get_available_datacenters() -> List[str]
-    get_user_status(token, database) -> List[Endpoint]
+    get_token_status(token, database) -> List[Endpoint]
     delete_endpoint(token, endpoint_name, database) -> None
 
 Functions -- Internal Utility:
@@ -37,8 +37,9 @@ def _get_database():
 
 
 @app.post("/tokens/", response_model=schemas.TokenInitialCreationResponse)
-def create_token(new_token_request: schemas.TokenCreate, database: Session = Depends(_get_database)):
-    """create a new new_token_request"""
+def create_token(new_token_request: schemas.TokenCreate,
+                 database: Session = Depends(_get_database)):
+    """create a new token"""
     return crud.create_token(database, new_token_request)
 
 
@@ -46,9 +47,9 @@ def create_token(new_token_request: schemas.TokenCreate, database: Session = Dep
 def read_tokens(skip: int = 0,
                limit: int = 100,
                database: Session = Depends(_get_database)):
-    """get and return a list of users"""
-    users = crud.get_users(database, skip, limit)
-    return users
+    """get and return a list of active Tokens"""
+    tokens = crud.get_tokens(database, skip, limit)
+    return tokens
 
 
 @app.post("/create", response_model=schemas.Endpoint)

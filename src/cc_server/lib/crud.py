@@ -2,15 +2,15 @@
 Create, Read, Update, and Delete (CRUD) utilities
 
 Functions:
-    get_user(database, user_id) -> models.Token | None
+    get_user(database, token_id) -> models.Token | None
     get_user_by_email(database, email)
     get_user_by_token(database, token) -> models.Token
-    get_users(database, skip: int = 0, limit: int = 100)
+    get_tokens(database, skip: int = 0, limit: int = 100)
     is_expired(expiration_date) -> bool
     validate_token(database, token: str) -> bool
     create_user(database, user)
     validate_endpoint_creation_request(settings) -> (bool, str, EndpointCreate)
-    update_user_endpoint_count(database, user_id)
+    update_token_endpoint_count(database, token_id)
     create_new_endpoint(database, settings, token) -> Endpoint
     get_user_endpoints(database, token) -> List[Endpoint]
     delete_endpoint(token, endpoint_name, database)
@@ -26,16 +26,6 @@ from sqlalchemy.orm import Session
 from . import models, schemas, digital_ocean
 
 
-def get_user(database: Session, user_id: int) -> models.Token | None:
-    """get a user by id"""
-    return database.query(models.Token).filter(models.Token.id == user_id).first()
-
-
-def get_user_by_email(database: Session, email: str) -> models.Token | None:
-    """get a user by email"""
-    return database.query(models.Token).filter(models.Token.email == email).first()
-
-
 def get_token_db_record(database: Session, token: str) -> models.Token | None:
     """get a token record from the database"""
     token = database.query(models.Token) \
@@ -44,9 +34,9 @@ def get_token_db_record(database: Session, token: str) -> models.Token | None:
     return token
 
 
-def get_users(database: Session,
-              skip: int = 0,
-              limit: int = 100) -> List[models.Token]:
+def get_tokens(database: Session,
+               skip: int = 0,
+               limit: int = 100) -> List[models.Token]:
     """get a list of all users, skip and limit parameters slice"""
     return database.query(models.Token).offset(skip).limit(limit).all()
 
@@ -109,13 +99,14 @@ def validate_endpoint_creation_request(
     return True, "", settings
 
 
-def update_user_endpoint_count(database: Session, user_id: int) -> None:
+def update_token_endpoint_count(database: Session, token_id: int) -> None:
     """count and store the number of endpoints associated with a user"""
-    user = database.query(models.Token).filter(models.Token.id == user_id).first()
-    user.endpoint_count = len(user.endpoints)
-    database.add(user)
+    token = database.query(models.Token)\
+        .filter(models.Token.id == token_id).first()
+    token.endpoint_count = len(token.endpoints)
+    database.add(token)
     database.commit()
-    database.refresh(user)
+    database.refresh(token)
 
 
 def create_new_endpoint(database: Session,
@@ -149,7 +140,7 @@ def create_new_endpoint(database: Session,
     database.add(database_endpoint)
     database.commit()
     database.refresh(database_endpoint)
-    update_user_endpoint_count(database, user.id)
+    update_token_endpoint_count(database, user.id)
     return schemas.Endpoint(server_ip=database_endpoint.server_ip,
                             endpoint_name=database_endpoint.endpoint_name)
 
@@ -160,11 +151,19 @@ def get_endpoints_by_token(database: Session, token: str) -> List[schemas.Endpoi
     return token.endpoints
 
 
-def delete_endpoint(user_token, endpoint_name, database):
-    """delete a user's endpoint by name"""
+def delete_endpoint(token, endpoint_name, database):
+    """delete a token's endpoint by name"""
     endpoint = database.query(models.Endpoint) \
-        .filter(models.Endpoint.endpoint_name == endpoint_name)
+        .filter(models.Endpoint.endpoint_name == endpoint_name,
+                models.Endpoint.owner ==
+                get_token_db_record(database, token))
+
+    if not isinstance(endpoint.first(), models.Endpoint):
+        raise HTTPException(status_code=422,
+                            detail="Endpoint not found.")
+
     droplet_id = endpoint.first().droplet_id
     digital_ocean.delete_droplet(droplet_id)
     endpoint.delete()
-    update_user_endpoint_count(database, get_token_db_record(database, user_token).id)
+    update_token_endpoint_count(database,
+                                get_token_db_record(database, token).id)
