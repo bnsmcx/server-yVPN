@@ -5,10 +5,10 @@ Functions -- API Endpoints:
     create_user(user, database) -> Token
     read_users(skip, limit, database) -> List[Token]
     read_user(user_id, database) -> Token
-    create_endpoint(settings, user_token, database) -> Endpoint
+    create_endpoint(settings, token, database) -> Endpoint
     get_available_datacenters() -> List[str]
-    get_user_status(user_token, database) -> List[Endpoint]
-    delete_endpoint(user_token, endpoint_name, database) -> None
+    get_user_status(token, database) -> List[Endpoint]
+    delete_endpoint(token, endpoint_name, database) -> None
 
 Functions -- Internal Utility:
     _get_database() -> Session
@@ -53,12 +53,11 @@ def read_tokens(skip: int = 0,
 
 @app.post("/create", response_model=schemas.Endpoint)
 def create_endpoint(settings: schemas.EndpointCreate,
-                    user_token: str,
+                    token: str,
                     database: Session = Depends(_get_database)):
     """create a new endpoint"""
-    if not crud.valid_user_token(database, user_token):
-        raise HTTPException(status_code=401, detail="Invalid user new_token_request")
-    endpoint = crud.create_new_endpoint(database, settings, user_token)
+    crud.validate_token(database, token)
+    endpoint = crud.create_new_endpoint(database, settings, token)
     return endpoint
 
 
@@ -66,7 +65,7 @@ def create_endpoint(settings: schemas.EndpointCreate,
 def get_available_datacenters(user_token: str,
                               database: Session = Depends(_get_database)):
     """get a list of available digital ocean datacenters"""
-    if not crud.valid_user_token(database, user_token):
+    if not crud.validate_token(database, user_token):
         raise HTTPException(status_code=401, detail="Invalid user new_token_request.")
     return digital_ocean.get_available_datacenters()
 
@@ -74,7 +73,7 @@ def get_available_datacenters(user_token: str,
 @app.get("/status", response_model=List[schemas.Endpoint])
 def get_user_status(user_token: str, database: Session = Depends(_get_database)):
     """get a user's usage summary"""
-    if not crud.valid_user_token(database, user_token):
+    if not crud.validate_token(database, user_token):
         raise HTTPException(status_code=401, detail="Invalid user new_token_request")
     user_endpoints = crud.get_user_endpoints(database, user_token)
     return user_endpoints
@@ -85,6 +84,6 @@ def delete_endpoint(user_token: str,
                     endpoint_name: str,
                     database: Session = Depends(_get_database)):
     """delete an endpoint"""
-    if not crud.valid_user_token(database, user_token):
+    if not crud.validate_token(database, user_token):
         raise HTTPException(status_code=401, detail="Invalid user new_token_request.")
     crud.delete_endpoint(user_token, endpoint_name, database)

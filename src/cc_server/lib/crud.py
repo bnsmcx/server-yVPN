@@ -4,15 +4,16 @@ Create, Read, Update, and Delete (CRUD) utilities
 Functions:
     get_user(database, user_id) -> models.Token | None
     get_user_by_email(database, email)
-    get_user_by_token(database, user_token) -> models.Token
+    get_user_by_token(database, token) -> models.Token
     get_users(database, skip: int = 0, limit: int = 100)
-    valid_user(database, user_token: str) -> bool
+    is_expired(expiration_date) -> bool
+    validate_token(database, token: str) -> bool
     create_user(database, user)
     validate_endpoint_creation_request(settings) -> (bool, str, EndpointCreate)
     update_user_endpoint_count(database, user_id)
-    create_new_endpoint(database, settings, user_token) -> Endpoint
-    get_user_endpoints(database, user_token) -> List[Endpoint]
-    delete_endpoint(user_token, endpoint_name, database)
+    create_new_endpoint(database, settings, token) -> Endpoint
+    get_user_endpoints(database, token) -> List[Endpoint]
+    delete_endpoint(token, endpoint_name, database)
 """
 
 import random
@@ -50,15 +51,28 @@ def get_users(database: Session,
     return database.query(models.Token).offset(skip).limit(limit).all()
 
 
-def valid_user_token(database: Session, user_token: str) -> bool:
-    """check if a user new_token_request is valid"""
+def is_expired(expiration_date: str):
+    """check if we are past an expiration date"""
+    expiration_date = datetime.strptime(expiration_date, "%d-%B-%Y %H:%M:%S UTC")
+    return datetime.now(tz=timezone.utc) > expiration_date.replace(tzinfo=timezone.utc)
+
+
+def validate_token(database: Session, token: str):
+    """check if a token is valid"""
     query_result = database.query(models.Token) \
-        .filter(models.Token.token == user_token) \
+        .filter(models.Token.token == token) \
         .first()
-    return isinstance(query_result, models.Token)
+
+    if not isinstance(query_result, models.Token):
+        raise HTTPException(status_code=404, detail="Token not found.")
+    if query_result.funds_available <= 0:
+        raise HTTPException(status_code=401, detail="Insufficient funds.")
+    if is_expired(query_result.expiration):
+        raise HTTPException(status_code=401, detail="Token is expired.")
 
 
 def get_expiration_date(days_till_expiration: int) -> str:
+    """calculate the expiration date"""
     now = datetime.now(tz=timezone.utc)
     new_date = now + timedelta(days=days_till_expiration)
 
