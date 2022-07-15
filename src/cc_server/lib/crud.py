@@ -2,9 +2,9 @@
 Create, Read, Update, and Delete (CRUD) utilities
 
 Functions:
-    get_user(database, user_id) -> models.User | None
+    get_user(database, user_id) -> models.Token | None
     get_user_by_email(database, email)
-    get_user_by_token(database, user_token) -> models.User
+    get_user_by_token(database, user_token) -> models.Token
     get_users(database, skip: int = 0, limit: int = 100)
     valid_user(database, user_token: str) -> bool
     create_user(database, user)
@@ -24,44 +24,44 @@ from sqlalchemy.orm import Session
 from . import models, schemas, digital_ocean
 
 
-def get_user(database: Session, user_id: int) -> models.User | None:
+def get_user(database: Session, user_id: int) -> models.Token | None:
     """get a user by id"""
-    return database.query(models.User).filter(models.User.id == user_id).first()
+    return database.query(models.Token).filter(models.Token.id == user_id).first()
 
 
-def get_user_by_email(database: Session, email: str) -> models.User | None:
+def get_user_by_email(database: Session, email: str) -> models.Token | None:
     """get a user by email"""
-    return database.query(models.User).filter(models.User.email == email).first()
+    return database.query(models.Token).filter(models.Token.email == email).first()
 
 
-def get_user_by_token(database: Session, user_token: str) -> models.User | None:
+def get_user_by_token(database: Session, user_token: str) -> models.Token | None:
     """get a user by token"""
-    user = database.query(models.User) \
-        .filter(models.User.token == user_token) \
+    user = database.query(models.Token) \
+        .filter(models.Token.token == user_token) \
         .first()
     return user
 
 
 def get_users(database: Session,
               skip: int = 0,
-              limit: int = 100) -> List[models.User]:
+              limit: int = 100) -> List[models.Token]:
     """get a list of all users, skip and limit parameters slice"""
-    return database.query(models.User).offset(skip).limit(limit).all()
+    return database.query(models.Token).offset(skip).limit(limit).all()
 
 
 def valid_user_token(database: Session, user_token: str) -> bool:
     """check if a user token is valid"""
-    query_result = database.query(models.User) \
-        .filter(models.User.token == user_token) \
+    query_result = database.query(models.Token) \
+        .filter(models.Token.token == user_token) \
         .first()
-    return isinstance(query_result, models.User)
+    return isinstance(query_result, models.Token)
 
 
-def create_user(database: Session, user: schemas.UserCreate) -> models.User:
+def create_user(database: Session, user: schemas.UserCreate) -> models.Token:
     """create a new user"""
     fake_hashed_password = user.password + "notreallyhashed"
-    database_user = models.User(email=user.email, token="yeet",
-                                hashed_password=fake_hashed_password)
+    database_user = models.Token(email=user.email, token="yeet",
+                                 hashed_password=fake_hashed_password)
     database.add(database_user)
     database.commit()
     database.refresh(database_user)
@@ -86,7 +86,7 @@ def validate_endpoint_creation_request(
 
 def update_user_endpoint_count(database: Session, user_id: int) -> None:
     """count and store the number of endpoints associated with a user"""
-    user = database.query(models.User).filter(models.User.id == user_id).first()
+    user = database.query(models.Token).filter(models.Token.id == user_id).first()
     user.endpoint_count = len(user.endpoints)
     database.add(user)
     database.commit()
@@ -99,7 +99,7 @@ def create_new_endpoint(database: Session,
     """create a new endpoint"""
 
     # get user profile, validate the new endpoint settings
-    user = database.query(models.User).filter(models.User.token == user_token).first()
+    user = database.query(models.Token).filter(models.Token.token == user_token).first()
     valid_request, error, settings = validate_endpoint_creation_request(settings)
     if not valid_request:
         raise HTTPException(status_code=404, detail=error)

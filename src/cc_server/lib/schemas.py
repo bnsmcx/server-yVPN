@@ -7,7 +7,7 @@ Classes (models):
     EndpointCreate
     UserBase
     UserCreate
-    User
+    Token
 """
 # pylint: skip-file
 
@@ -33,17 +33,17 @@ class EndpointCreate(BaseModel):
     ssh_pub_key: str
 
 
-class UserBase(BaseModel):
-    email: str
+class TokenCreate(BaseModel):
+    funds: float
+    days_till_expiration: int
 
 
-class UserCreate(UserBase):
-    password: str
-
-
-class User(UserBase):
+class Token(BaseModel):
     id: int
+    token: str
     is_active: bool
+    funds_available: float
+    expiration: str
     endpoint_count: int
     endpoints: List[Endpoint]
 

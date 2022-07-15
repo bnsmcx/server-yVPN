@@ -2,9 +2,9 @@
 fastAPI app for the yourVPN rendezvous server.
 
 Functions -- API Endpoints:
-    create_user(user, database) -> User
-    read_users(skip, limit, database) -> List[User]
-    read_user(user_id, database) -> User
+    create_user(user, database) -> Token
+    read_users(skip, limit, database) -> List[Token]
+    read_user(user_id, database) -> Token
     create_endpoint(settings, user_token, database) -> Endpoint
     get_available_datacenters() -> List[str]
     get_user_status(user_token, database) -> List[Endpoint]
@@ -59,7 +59,7 @@ def read_user(user_id: int, database: Session = Depends(_get_database)):
     """return a specific user"""
     database_user = crud.get_user(database, user_id)
     if database_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Token not found")
     return database_user
 
 
