@@ -16,6 +16,7 @@ Functions:
 """
 
 import random
+from datetime import timedelta, datetime, timezone
 from typing import Tuple, List
 
 from fastapi import HTTPException
@@ -35,7 +36,7 @@ def get_user_by_email(database: Session, email: str) -> models.Token | None:
 
 
 def get_user_by_token(database: Session, user_token: str) -> models.Token | None:
-    """get a user by token"""
+    """get a user by new_token_request"""
     user = database.query(models.Token) \
         .filter(models.Token.token == user_token) \
         .first()
@@ -50,22 +51,34 @@ def get_users(database: Session,
 
 
 def valid_user_token(database: Session, user_token: str) -> bool:
-    """check if a user token is valid"""
+    """check if a user new_token_request is valid"""
     query_result = database.query(models.Token) \
         .filter(models.Token.token == user_token) \
         .first()
     return isinstance(query_result, models.Token)
 
 
-def create_user(database: Session, user: schemas.UserCreate) -> models.Token:
+def get_expiration_date(days_till_expiration: int) -> str:
+    now = datetime.now(tz=timezone.utc)
+    new_date = now + timedelta(days=days_till_expiration)
+
+    return new_date.strftime("%d-%B-%Y %H:%M:%S UTC")
+
+
+def create_token(database: Session,
+                 request: schemas.TokenCreate) -> schemas.TokenInitialCreationResponse:
     """create a new user"""
-    fake_hashed_password = user.password + "notreallyhashed"
-    database_user = models.Token(email=user.email, token="yeet",
-                                 hashed_password=fake_hashed_password)
-    database.add(database_user)
+    new_token = f"cellar_door{random.random()}"  # TODO: implement new_token_request creation
+    db_token_entry = models.Token(token=new_token,
+                                  funds_available=request.funds,
+                                  expiration=get_expiration_date(request.days_till_expiration))
+
+    database.add(db_token_entry)
     database.commit()
-    database.refresh(database_user)
-    return database_user
+    database.refresh(db_token_entry)
+    return schemas.TokenInitialCreationResponse(token=db_token_entry.token,
+                                                funds_available=db_token_entry.funds_available,
+                                                expiration=db_token_entry.expiration)
 
 
 def validate_endpoint_creation_request(

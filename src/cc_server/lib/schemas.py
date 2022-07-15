@@ -38,6 +38,12 @@ class TokenCreate(BaseModel):
     days_till_expiration: int
 
 
+class TokenInitialCreationResponse(BaseModel):
+    token: str
+    funds_available: float
+    expiration: str
+
+
 class Token(BaseModel):
     id: int
     token: str
