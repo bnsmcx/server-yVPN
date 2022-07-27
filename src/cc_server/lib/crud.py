@@ -1,19 +1,5 @@
 """
 Create, Read, Update, and Delete (CRUD) utilities
-
-Functions:
-    get_token(database, token_id) -> models.Token | None
-    get_token_by_email(database, email)
-    get_token_by_token(database, token) -> models.Token
-    get_tokens(database, skip: int = 0, limit: int = 100)
-    is_expired(expiration_date) -> bool
-    validate_token(database, token: str) -> bool
-    create_token(database, token)
-    validate_endpoint_creation_request(settings) -> (bool, str, EndpointCreate)
-    update_token_endpoint_count(database, token_id)
-    create_new_endpoint(database, settings, token) -> Endpoint
-    get_token_endpoints(database, token) -> List[Endpoint]
-    delete_endpoint(token, endpoint_name, database)
 """
 
 import random
@@ -53,20 +39,6 @@ def token_is_expired(database: Session, token: str):
     today = datetime.now(tz=timezone.utc)
 
     return today > token_expiration
-
-
-def validate_token(database: Session, token: str, creation_op: bool):
-    """check if a token is valid"""
-    query_result = database.query(models.Token) \
-        .filter(models.Token.token == token) \
-        .first()
-
-    if not isinstance(query_result, models.Token):
-        raise HTTPException(status_code=404, detail="Token not found.")
-    if creation_op and query_result.funds_available <= 0:
-        raise HTTPException(status_code=401, detail="Insufficient funds.")
-    if creation_op and is_expired(query_result.expiration):
-        raise HTTPException(status_code=401, detail="Token is expired.")
 
 
 def get_expiration_date(days_till_expiration: int) -> str:

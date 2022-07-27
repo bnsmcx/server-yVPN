@@ -1,17 +1,5 @@
 """
 fastAPI app for the yourVPN rendezvous server.
-
-Functions -- API Endpoints:
-    create_token(token, database) -> Token
-    read_tokens(skip, limit, database) -> List[Token]
-    read_token(token_id, database) -> Token
-    create_endpoint(settings, token, database) -> Endpoint
-    get_available_datacenters() -> List[str]
-    get_token_status(token, database) -> List[Endpoint]
-    delete_endpoint(token, endpoint_name, database) -> None
-
-Functions -- Internal Utility:
-    _get_database() -> Session
 """
 
 from typing import List
