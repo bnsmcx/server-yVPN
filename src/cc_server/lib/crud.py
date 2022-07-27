@@ -41,10 +41,18 @@ def get_tokens(database: Session,
     return database.query(models.Token).offset(skip).limit(limit).all()
 
 
-def is_expired(expiration_date: str):
+def token_is_expired(database: Session, token: str):
     """check if we are past an expiration date"""
-    expiration_date = datetime.strptime(expiration_date, "%d-%B-%Y %H:%M:%S UTC")
-    return datetime.now(tz=timezone.utc) > expiration_date.replace(tzinfo=timezone.utc)
+    query = database.query(models.Token) \
+        .filter(models.Token.token == token) \
+        .first()
+
+    token_expiration = datetime\
+        .strptime(query.expiration, "%d-%B-%Y %H:%M:%S UTC")\
+        .replace(tzinfo=timezone.utc)
+    today = datetime.now(tz=timezone.utc)
+
+    return today > token_expiration
 
 
 def validate_token(database: Session, token: str, creation_op: bool):

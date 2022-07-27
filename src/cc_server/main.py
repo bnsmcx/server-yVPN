@@ -44,10 +44,11 @@ def _get_and_validate_token(token: str = Security(token),
     tokens = []
     for value in database.query(models.Token.token).distinct():
         tokens.append(value[0])
-    if token in tokens:
+    if token in tokens and not crud.token_is_expired(database, token):
         return token
     else:
-        raise HTTPException(status_code=401, detail="Invalid or missing token.")
+        raise HTTPException(status_code=401,
+                            detail="Invalid, expired, or missing token.")
 
 
 @app.post("/tokens/", response_model=schemas.TokenInitialCreationResponse)
@@ -74,8 +75,8 @@ def create_endpoint(settings: schemas.EndpointCreate,
     """create a new endpoint"""
     if crud.token_has_sufficient_funds(database, token):
         return
-        # endpoint = crud.create_new_endpoint(database, settings, token)
-        # return endpoint
+        endpoint = crud.create_new_endpoint(database, settings, token)
+        return endpoint
 
     raise HTTPException(status_code=403, detail="Insufficient funds.")
 
