@@ -17,8 +17,8 @@ class Token(Base):
     """ORM model for a Token"""
     __tablename__ = "tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String, unique=True, index=True)
+    id = Column(Integer, index=True)
+    token = Column(String, primary_key=True, index=True)
     is_active = Column(Boolean, default=True)
     funds_available = Column(Float)
     expiration = Column(String)

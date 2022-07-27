@@ -39,13 +39,11 @@ class TokenCreate(BaseModel):
 
 
 class TokenInitialCreationResponse(BaseModel):
-    token: str
     funds_available: float
     expiration: str
 
 
 class Token(BaseModel):
-    id: int
     token: str
     is_active: bool
     funds_available: float

@@ -115,13 +115,14 @@ def create_new_endpoint(database: Session,
     """create a new endpoint"""
 
     # get token db entry, validate the new endpoint settings
-    db_token = database.query(models.Token).filter(models.Token.token == token).first()
+    token_db_entry = database.query(models.Token)\
+        .filter(models.Token.token == token).first()
     valid_request, error, settings = validate_endpoint_creation_request(settings)
     if not valid_request:
         raise HTTPException(status_code=404, detail=error)
 
     # name endpoint, set the ssh key, request droplet creation, delete ssh key
-    endpoint_name = f"{db_token.id}-{db_token.endpoint_count + 1}-{settings.region}"
+    endpoint_name = f"{token_db_entry.id}-{token_db_entry.endpoint_count + 1}-{settings.region}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
     try:
         droplet_id, endpoint_name = digital_ocean\
@@ -132,7 +133,7 @@ def create_new_endpoint(database: Session,
     # get new endpoint's ip, create Endpoint obj
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     database_endpoint = models.Endpoint(server_ip=endpoint_ip,
-                                        owner_id=db_token.id,
+                                        owner_id=token_db_entry.id,
                                         endpoint_name=endpoint_name,
                                         droplet_id=droplet_id)
 
@@ -140,7 +141,7 @@ def create_new_endpoint(database: Session,
     database.add(database_endpoint)
     database.commit()
     database.refresh(database_endpoint)
-    update_token_endpoint_count(database, db_token.id)
+    update_token_endpoint_count(database, token_db_entry.id)
     return schemas.Endpoint(server_ip=database_endpoint.server_ip,
                             endpoint_name=database_endpoint.endpoint_name)
 
@@ -167,3 +168,12 @@ def delete_endpoint(token, endpoint_name, database):
     endpoint.delete()
     update_token_endpoint_count(database,
                                 get_token_db_record(database, token).id)
+
+
+def token_has_sufficient_funds(database: Session, token: str):
+    query_result = database.query(models.Token) \
+        .filter(models.Token.token == token) \
+        .first()
+    if query_result.funds_available <= 0:
+        return False
+    return True
