@@ -13,7 +13,6 @@ from lib.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
-test_token = "yoda"
 app = FastAPI()
 token = APIKeyHeader(name="token", auto_error=False)
 
