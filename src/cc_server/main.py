@@ -62,7 +62,6 @@ def create_endpoint(settings: schemas.EndpointCreate,
                     database: Session = Depends(_get_database)):
     """create a new endpoint"""
     if crud.token_has_sufficient_funds(database, token):
-        return
         endpoint = crud.create_new_endpoint(database, settings, token)
         return endpoint
 
@@ -70,25 +69,22 @@ def create_endpoint(settings: schemas.EndpointCreate,
 
 
 @app.get("/datacenters", response_model=schemas.DataCenters)
-def get_available_datacenters(token: str,
-                              database: Session = Depends(_get_database)):
+def get_available_datacenters(token: str = Depends(_get_and_validate_token)):
     """get a list of available digital ocean datacenters"""
-    crud.validate_token(database, token, False)
     return digital_ocean.get_available_datacenters()
 
 
 @app.get("/status", response_model=List[schemas.Endpoint])
-def get_token_status(token: str, database: Session = Depends(_get_database)):
+def get_token_status(token: str = Depends(_get_and_validate_token),
+                     database: Session = Depends(_get_database)):
     """get a token's usage summary"""
-    crud.validate_token(database, token, False)
     endpoints = crud.get_endpoints_by_token(database, token)
     return endpoints
 
 
 @app.delete("/endpoint")
-def delete_endpoint(token: str,
-                    endpoint_name: str,
+def delete_endpoint(endpoint_name: str,
+                    token: str = Depends(_get_and_validate_token),
                     database: Session = Depends(_get_database)):
     """delete an endpoint"""
-    crud.validate_token(database, token, False)
     crud.delete_endpoint(token, endpoint_name, database)
