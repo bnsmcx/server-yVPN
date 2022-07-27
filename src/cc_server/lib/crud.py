@@ -141,7 +141,8 @@ def delete_endpoint(token, endpoint_name, database):
 
     if not isinstance(endpoint.first(), models.Endpoint):
         raise HTTPException(status_code=422,
-                            detail="Endpoint not found.")
+                            detail="Endpoint not found.  Either the name is"
+                                   " wrong or it isn't associated with your token.")
 
     droplet_id = endpoint.first().droplet_id
     digital_ocean.delete_droplet(droplet_id)
