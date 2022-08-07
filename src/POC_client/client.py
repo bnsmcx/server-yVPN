@@ -11,20 +11,15 @@ import typer
 import os
 
 app = typer.Typer()
-SERVER_URL = "http://127.0.0.1:8000"
 
 
 @app.command()
 def create(token: str):
     """CREATE a new VPN endpoint"""
-    
-    header = {"token": f"{token}"}
-    server_ip = requests.get(url=f"{SERVER_URL}/status",
-                               headers=header).json()
-    
     client_ip = "10.0.0.2"  # TODO: let the user set this
 
     refresh_client_keys()
+    server_ip = create_vpn_endpoint(token)
     server_public_key = server_key_exchange(server_ip, client_ip)
     configure_wireguard_client(server_public_key, server_ip, client_ip)
 
@@ -44,28 +39,15 @@ def disconnect():
 
 
 @app.command()
-def destroy(token: str, endpoint_name: str):
+def destroy():
     """permanently DESTROY your endpoint"""
-    
-    header = {"token": f"{token}"}
-    status = requests.delete(url=f"{SERVER_URL}/endpoint",
-                               headers=header,
-                               endpoint_name=endpoint_name)
-
-    if status.status_code == 200:
-        print(f"{endpoint_name} successfully deleted.")
-    else:
-        print(f"Problem deleting {endpoint_name}:\n {status.json()}")
+    pass
 
 
 @app.command()
-def status(token: str):
+def status():
     """display connection, usage and endpoint info"""
-
-    header = {"token": f"{token}"}
-    status = requests.get(url=f"{SERVER_URL}/status",
-                               headers=header).json()
-    print(status)
+    pass
 
 
 def server_key_exchange(server_ip: str, client_ip: str) -> str:
@@ -145,11 +127,60 @@ def configure_wireguard_client(server_public_key: str,
 
 def get_datacenter_regions(token: str) -> list:
     print("Getting a list of available datacenters ...")
-    header = {"token": f"{token}"}
-    regions_raw = requests.get(url=f"{SERVER_URL}/datacenters",
-                               headers=header).json()["available"]
+    header = {"Authorization": f"Bearer {token}"}
+    regions_raw = requests.get(url="https://api.digitalocean.com/v2/regions",
+                               headers=header).json()["regions"]
+    regions = []
+    for region in regions_raw:
+        regions.append(region["slug"])
 
     return regions
+
+
+def create_vpn_endpoint(token: str):
+    regions = get_datacenter_regions(token)
+    image_id = 110391971  # TODO: this shouldn't be hardcoded, query from digital ocean
+    ssh_fingerprint = "c7:26:64:b6:50:38:a0:29:14:1b:33:b2:5e:70:3f:bd"  # TODO: no hardcode
+    endpoint_name = "test-endpoint"  # TODO:  this should be unique to user
+    request = {
+        "name": f"{endpoint_name}",
+        "region": f"{random.choice(regions)}",
+        "size": "s-1vcpu-1gb",
+        "image": image_id,
+        "ssh_keys": [
+            f"{ssh_fingerprint}"
+        ],
+    }
+
+    header = {"Authorization": f"Bearer {token}"}
+    response = requests.post(json=request,
+                             url="https://api.digitalocean.com/v2/droplets",
+                             headers=header)
+
+    endpoint_id = response.json()["droplet"]["id"]
+
+    spinner = spinning_cursor()
+    while True:
+        server_status = requests.get(url=f"https://api.digitalocean.com/v2/droplets/{endpoint_id}",
+                                     headers=header).json()["droplet"]["status"]
+        message = "Creating endpoint (should be less than a minute) ... " + \
+                  f"{next(spinner)}"
+        sys.stdout.write(message)
+        sys.stdout.flush()
+        time.sleep(.3)
+        sys.stdout.write('\b' * len(message))
+        if server_status == "active":
+            sys.stdout.write("\n")
+            break
+
+    server_networks = requests.get(url=f"https://api.digitalocean.com/v2/droplets/{endpoint_id}",
+                                   headers=header).json()["droplet"]["networks"]["v4"]
+    server_ip = ""
+    for network in server_networks:
+        if network['type'] == 'public':
+            server_ip = network['ip_address']
+
+    return server_ip
 
 
 def spinning_cursor():
