@@ -39,9 +39,18 @@ def disconnect():
 
 
 @app.command()
-def destroy():
+def destroy(token: str, endpoint_name: str):
     """permanently DESTROY your endpoint"""
-    pass
+    
+    header = {"token": f"{token}"}
+    status = requests.delete(url=f"{SERVER_URL}/endpoint",
+                               headers=header,
+                               endpoint_name=endpoint_name)
+
+    if status.status_code == 200:
+        print(f"{endpoint_name} successfully deleted.")
+    else:
+        print(f"Problem deleting {endpoint_name}:\n {status.json()}")
 
 
 @app.command()
