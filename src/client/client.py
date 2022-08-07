@@ -11,15 +11,20 @@ import typer
 import os
 
 app = typer.Typer()
+SERVER_URL = "http://127.0.0.1:8000"
 
 
 @app.command()
 def create(token: str):
     """CREATE a new VPN endpoint"""
+    
+    header = {"token": f"{token}"}
+    server_ip = requests.get(url=f"{SERVER_URL}/status",
+                               headers=header).json()
+    
     client_ip = "10.0.0.2"  # TODO: let the user set this
 
     refresh_client_keys()
-    server_ip = create_vpn_endpoint(token)
     server_public_key = server_key_exchange(server_ip, client_ip)
     configure_wireguard_client(server_public_key, server_ip, client_ip)
 
