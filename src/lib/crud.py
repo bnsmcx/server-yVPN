@@ -155,6 +155,6 @@ def token_has_sufficient_funds(database: Session, token: str):
     query_result = database.query(models.Token) \
         .filter(models.Token.token == token) \
         .first()
-    if query_result.funds_available <= 0:
+    if query_result is None or query_result.funds_available <= 0:
         return False
     return True
