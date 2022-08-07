@@ -45,9 +45,13 @@ def destroy():
 
 
 @app.command()
-def status():
+def status(token: str):
     """display connection, usage and endpoint info"""
-    pass
+
+    header = {"token": f"{token}"}
+    status = requests.get(url=f"{SERVER_URL}/status",
+                               headers=header).json()
+    print(status)
 
 
 def server_key_exchange(server_ip: str, client_ip: str) -> str:
