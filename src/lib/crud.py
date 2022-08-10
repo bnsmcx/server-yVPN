@@ -102,7 +102,10 @@ def create_new_endpoint(database: Session,
         raise HTTPException(status_code=404, detail=error)
 
     # name endpoint, set the ssh key, request droplet creation, delete ssh key
-    endpoint_name = f"{token_db_entry.id}-{token_db_entry.endpoint_count + 1}-{settings.region}"
+    user_id = token_db_entry.id
+    endpoint_count = token_db_entry.endpoint_count + 1
+    datacenter = settings.region
+    endpoint_name = f"{user_id}-{endpoint_count}-{datacenter}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
     try:
         droplet_id, endpoint_name = digital_ocean\

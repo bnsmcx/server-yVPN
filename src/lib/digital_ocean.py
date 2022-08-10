@@ -54,9 +54,8 @@ def create_droplet(endpoint_name: str,
         ],
     }
 
-    current_region = request["region"]
-
     while random_region:
+        current_region = request["region"]
         request["region"] = random.choice(get_available_datacenters().available)
         request["name"] = request["name"].replace(current_region, request["region"])
 
