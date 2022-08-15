@@ -17,7 +17,6 @@ class Token(Base):
     """ORM model for a Token"""
     __tablename__ = "tokens"
 
-    id = Column(Integer, index=True)
     token = Column(String, primary_key=True, index=True)
     is_active = Column(Boolean, default=True)
     funds_available = Column(Float)
@@ -34,6 +33,6 @@ class Endpoint(Base):
     endpoint_name = Column(String)
     server_ip = Column(String)
     droplet_id = Column(Integer, primary_key=True, index=True)
-    owner_id = Column(Integer, ForeignKey("tokens.id"))
+    owner_id = Column(Integer, ForeignKey("tokens.token"))
 
     owner = relationship("Token", back_populates="endpoints")

@@ -79,14 +79,14 @@ def validate_endpoint_creation_request(
     return True, "", settings
 
 
-def update_token_endpoint_count(database: Session, token_id: int) -> None:
+def update_token_endpoint_count(database: Session, token: str) -> None:
     """count and store the number of endpoints associated with a token"""
-    token = database.query(models.Token)\
-        .filter(models.Token.id == token_id).first()
-    token.endpoint_count = len(token.endpoints)
-    database.add(token)
+    db_token_entry= database.query(models.Token)\
+        .filter(models.Token.token == token).first()
+    db_token_entry.endpoint_count = len(db_token_entry.endpoints)
+    database.add(db_token_entry)
     database.commit()
-    database.refresh(token)
+    database.refresh(db_token_entry)
 
 
 def create_new_endpoint(database: Session,
@@ -102,10 +102,10 @@ def create_new_endpoint(database: Session,
         raise HTTPException(status_code=404, detail=error)
 
     # name endpoint, set the ssh key, request droplet creation, delete ssh key
-    user_id = token_db_entry.id
+    abbreviated_token = token_db_entry.token[-6:]
     endpoint_count = token_db_entry.endpoint_count + 1
     datacenter = settings.region
-    endpoint_name = f"{user_id}-{endpoint_count}-{datacenter}"
+    endpoint_name = f"{abbreviated_token}-{endpoint_count}-{datacenter}"
     ssh_key_id = digital_ocean.set_ssh_key(endpoint_name, settings.ssh_pub_key)
     try:
         droplet_id, endpoint_name = digital_ocean\
@@ -116,7 +116,7 @@ def create_new_endpoint(database: Session,
     # get new endpoint's ip, create Endpoint obj
     endpoint_ip = digital_ocean.get_droplet_ip(droplet_id)
     database_endpoint = models.Endpoint(server_ip=endpoint_ip,
-                                        owner_id=token_db_entry.id,
+                                        owner_id=token_db_entry.token,
                                         endpoint_name=endpoint_name,
                                         droplet_id=droplet_id)
 
@@ -124,7 +124,7 @@ def create_new_endpoint(database: Session,
     database.add(database_endpoint)
     database.commit()
     database.refresh(database_endpoint)
-    update_token_endpoint_count(database, token_db_entry.id)
+    update_token_endpoint_count(database, token_db_entry.token)
     return schemas.Endpoint(server_ip=database_endpoint.server_ip,
                             endpoint_name=database_endpoint.endpoint_name)
 
@@ -151,7 +151,7 @@ def delete_endpoint(token, endpoint_name, database):
     digital_ocean.delete_droplet(droplet_id)
     endpoint.delete()
     update_token_endpoint_count(database,
-                                get_token_db_record(database, token).id)
+                                get_token_db_record(database, token).token)
 
 
 def token_has_sufficient_funds(database: Session, token: str):
