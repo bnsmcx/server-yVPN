@@ -31,7 +31,8 @@ def get_available_datacenters() -> schemas.DataCenters:
                                headers=HEADER).json()["regions"]
     regions = []
     for region in regions_raw:
-        regions.append(region["slug"])
+        if region["available"]:
+            regions.append(region["slug"])
 
     return schemas.DataCenters(**{'available': regions})
 
