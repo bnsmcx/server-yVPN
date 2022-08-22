@@ -54,6 +54,7 @@ def create_token(database: Session,
     """create a new token"""
     new_token = f"cellar_door{random.random()}"  # TODO: implement new_token_request creation
     db_token_entry = models.Token(token=new_token,
+                                  admin=request.admin,
                                   funds_available=request.funds,
                                   expiration=get_expiration_date(request.days_till_expiration))
 

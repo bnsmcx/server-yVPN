@@ -36,7 +36,7 @@ def _get_and_validate_user_token(token: str = Security(token),
 
 
 def _get_and_validate_admin_token(token: str = Security(token),
-                                 database: Session = Depends(_get_database)) -> str:
+                                 database: Session = Depends(_get_database)):
     if valid_token := database.query(models.Token).get(token):
         if not valid_token.admin:
             raise HTTPException(status_code=401,
