@@ -141,7 +141,8 @@ def delete_token(token: str, database: Session):
     token_db_entry = database.query(models.Token)\
         .filter(models.Token.token == token)
 
-    if token_db_entry:
+    # using count() as bool here, should only ever be 1 or 0
+    if token_db_entry.count():
         for endpoint in token_db_entry.one().endpoints:
             delete_endpoint(token, endpoint.endpoint_name, database)
         token_db_entry.delete()
