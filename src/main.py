@@ -36,7 +36,7 @@ def _get_and_validate_user_token(token: str = Security(token),
 
 
 def _get_and_validate_admin_token(token: str = Security(token),
-                                 database: Session = Depends(_get_database)):
+                                  database: Session = Depends(_get_database)):
     if valid_token := database.query(models.Token).get(token):
         if not valid_token.admin:
             raise HTTPException(status_code=401,
@@ -46,7 +46,7 @@ def _get_and_validate_admin_token(token: str = Security(token),
                             detail="Invalid, expired, or missing token.")
 
 
-@app.post("/tokens/", response_model=schemas.TokenInitialCreationResponse)
+@app.post("/tokens", response_model=schemas.TokenInitialCreationResponse)
 def create_token(new_token_request: schemas.TokenCreate,
                  admin_token: str = Depends(_get_and_validate_admin_token),
                  database: Session = Depends(_get_database)):
@@ -54,7 +54,7 @@ def create_token(new_token_request: schemas.TokenCreate,
     return crud.create_token(database, new_token_request)
 
 
-@app.get("/tokens/", response_model=list[schemas.Token])
+@app.get("/tokens", response_model=list[schemas.Token])
 def read_tokens(skip: int = 0,
                 limit: int = 100,
                 database: Session = Depends(_get_database),
@@ -62,6 +62,14 @@ def read_tokens(skip: int = 0,
     """get and return a list of active Tokens"""
     tokens = crud.get_tokens(database, skip, limit)
     return tokens
+
+
+@app.delete("/tokens")
+def delete_token(token_to_delete: str,
+                 admin_token: str = Depends(_get_and_validate_admin_token),
+                 database: Session = Depends(_get_database)):
+    """delete an endpoint"""
+    crud.delete_token(token_to_delete, database)
 
 
 @app.post("/create", response_model=schemas.Endpoint)

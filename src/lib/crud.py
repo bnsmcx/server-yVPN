@@ -136,6 +136,21 @@ def get_endpoints_by_token(database: Session, token: str) -> List[schemas.Endpoi
     return token.endpoints
 
 
+def delete_token(token: str, database: Session):
+    """delete a token"""
+    token_db_entry = database.query(models.Token)\
+        .filter(models.Token.token == token)
+
+    if token_db_entry:
+        for endpoint in token_db_entry.one().endpoints:
+            delete_endpoint(token, endpoint.endpoint_name, database)
+        token_db_entry.delete()
+        database.commit()
+    else:
+        raise HTTPException(status_code=422,
+                            detail="Token not found.")
+
+
 def delete_endpoint(token, endpoint_name, database):
     """delete a token's endpoint by name"""
     endpoint = database.query(models.Endpoint) \
@@ -153,6 +168,7 @@ def delete_endpoint(token, endpoint_name, database):
     endpoint.delete()
     update_token_endpoint_count(database,
                                 get_token_db_record(database, token).token)
+    database.commit()
 
 
 def token_has_sufficient_funds(database: Session, token: str):
