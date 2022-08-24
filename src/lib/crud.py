@@ -3,6 +3,7 @@ Create, Read, Update, and Delete (CRUD) utilities
 """
 
 import random
+import secrets
 from datetime import timedelta, datetime, timezone
 from typing import Tuple, List
 
@@ -52,7 +53,7 @@ def get_expiration_date(days_till_expiration: int) -> str:
 def create_token(database: Session,
                  request: schemas.TokenCreate) -> schemas.TokenInitialCreationResponse:
     """create a new token"""
-    new_token = f"cellar_door{random.random()}"  # TODO: implement new_token_request creation
+    new_token = secrets.token_hex()
     db_token_entry = models.Token(token=new_token,
                                   admin=request.admin,
                                   funds_available=request.funds,
