@@ -18,7 +18,8 @@ class Token(Base):
     __tablename__ = "tokens"
 
     token = Column(String, primary_key=True, index=True)
-    is_active = Column(Boolean, default=True)
+    active = Column(Boolean, default=True)
+    admin = Column(Boolean, default=False)
     funds_available = Column(Float)
     expiration = Column(String)
     endpoint_count = Column(Integer, default=0)

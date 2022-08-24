@@ -3,6 +3,7 @@ Create, Read, Update, and Delete (CRUD) utilities
 """
 
 import random
+import secrets
 from datetime import timedelta, datetime, timezone
 from typing import Tuple, List
 
@@ -52,8 +53,9 @@ def get_expiration_date(days_till_expiration: int) -> str:
 def create_token(database: Session,
                  request: schemas.TokenCreate) -> schemas.TokenInitialCreationResponse:
     """create a new token"""
-    new_token = f"cellar_door{random.random()}"  # TODO: implement new_token_request creation
+    new_token = secrets.token_hex()
     db_token_entry = models.Token(token=new_token,
+                                  admin=request.admin,
                                   funds_available=request.funds,
                                   expiration=get_expiration_date(request.days_till_expiration))
 
@@ -135,6 +137,22 @@ def get_endpoints_by_token(database: Session, token: str) -> List[schemas.Endpoi
     return token.endpoints
 
 
+def delete_token(token: str, database: Session):
+    """delete a token"""
+    token_db_entry = database.query(models.Token)\
+        .filter(models.Token.token == token)
+
+    # using count() as bool here, should only ever be 1 or 0
+    if token_db_entry.count():
+        for endpoint in token_db_entry.one().endpoints:
+            delete_endpoint(token, endpoint.endpoint_name, database)
+        token_db_entry.delete()
+        database.commit()
+    else:
+        raise HTTPException(status_code=422,
+                            detail="Token not found.")
+
+
 def delete_endpoint(token, endpoint_name, database):
     """delete a token's endpoint by name"""
     endpoint = database.query(models.Endpoint) \
@@ -152,6 +170,7 @@ def delete_endpoint(token, endpoint_name, database):
     endpoint.delete()
     update_token_endpoint_count(database,
                                 get_token_db_record(database, token).token)
+    database.commit()
 
 
 def token_has_sufficient_funds(database: Session, token: str):

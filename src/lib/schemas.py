@@ -36,16 +36,19 @@ class EndpointCreate(BaseModel):
 class TokenCreate(BaseModel):
     funds: float
     days_till_expiration: int
+    admin: bool
 
 
 class TokenInitialCreationResponse(BaseModel):
     funds_available: float
     expiration: str
+    token: str
 
 
 class Token(BaseModel):
     token: str
-    is_active: bool
+    active: bool
+    admin: bool
     funds_available: float
     expiration: str
     endpoint_count: int
