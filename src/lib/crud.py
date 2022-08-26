@@ -1,16 +1,17 @@
 """
 Create, Read, Update, and Delete (CRUD) utilities
 """
-
-import random
+import multiprocessing
 import secrets
+import sys
+import time
 from datetime import timedelta, datetime, timezone
 from typing import Tuple, List
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from . import models, schemas, digital_ocean
+from . import models, schemas, digital_ocean, database
 
 
 def get_token_db_record(database: Session, token: str) -> models.Token | None:
@@ -83,7 +84,7 @@ def validate_endpoint_creation_request(
 
 def update_token_endpoint_count(database: Session, token: str) -> None:
     """count and store the number of endpoints associated with a token"""
-    db_token_entry= database.query(models.Token)\
+    db_token_entry = database.query(models.Token)\
         .filter(models.Token.token == token).first()
     db_token_entry.endpoint_count = len(db_token_entry.endpoints)
     database.add(db_token_entry)
@@ -180,3 +181,37 @@ def token_has_sufficient_funds(database: Session, token: str):
     if query_result is None or query_result.funds_available <= 0:
         return False
     return True
+
+
+def billing_worker():
+    """Updates the token's funds once per minute"""
+    digital_ocean_hourly_rate = 0.00893
+    yvpn_markup = 2
+    cost_per_minute = (digital_ocean_hourly_rate * yvpn_markup)/60
+    while True:
+        try:
+            db = database.SessionLocal()
+            models.Base.metadata.create_all(bind=database.engine)
+            tokens = get_tokens(db)
+            for token in tokens:
+                entry = db.query(models.Token) \
+                    .filter(models.Token.token == token.token).first()
+                new_charge = cost_per_minute * entry.endpoint_count
+                if (entry.funds_available - new_charge) >= 0:
+                    entry.funds_available = entry.funds_available - new_charge
+                    db.add(entry)
+                    db.commit()
+                    db.refresh(entry)
+                else:
+                    delete_token(token, db)
+            time.sleep(60)
+
+        except Exception as e:
+            print(f"{type(e)}\n{e.args}")
+            sys.exit(1)
+
+
+def start_billing_worker():
+    """Start a subprocess that """
+    worker = multiprocessing.Process(target=billing_worker)
+    worker.start()

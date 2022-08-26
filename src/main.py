@@ -14,6 +14,7 @@ from lib.database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+crud.start_billing_worker()
 token = APIKeyHeader(name="token", auto_error=False)
 
 
