@@ -57,3 +57,8 @@ class Token(BaseModel):
     class Config:
         orm_mode = True
 
+
+class Status(BaseModel):
+    funds: float
+    est_depletion: int
+    endpoints: List[Endpoint]

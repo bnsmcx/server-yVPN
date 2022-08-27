@@ -11,7 +11,7 @@ from typing import Tuple, List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from . import models, schemas, digital_ocean, database
+from . import models, schemas, digital_ocean, database, util
 
 
 def get_token_db_record(database: Session, token: str) -> models.Token | None:
@@ -185,9 +185,6 @@ def token_has_sufficient_funds(database: Session, token: str):
 
 def billing_worker():
     """Updates the token's funds once per minute"""
-    digital_ocean_hourly_rate = 0.00893
-    yvpn_markup = 2
-    cost_per_minute = (digital_ocean_hourly_rate * yvpn_markup)/60
     while True:
         try:
             db = database.SessionLocal()
@@ -196,7 +193,7 @@ def billing_worker():
             for token in tokens:
                 entry = db.query(models.Token) \
                     .filter(models.Token.token == token.token).first()
-                new_charge = cost_per_minute * entry.endpoint_count
+                new_charge = util.yvpn_minute_rate * entry.endpoint_count
                 if (entry.funds_available - new_charge) >= 0:
                     entry.funds_available = entry.funds_available - new_charge
                     db.add(entry)

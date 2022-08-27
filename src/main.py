@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from lib import crud, models, schemas, digital_ocean
 from lib.database import SessionLocal, engine
+from lib import util
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -91,12 +92,21 @@ def get_available_datacenters(token: str = Depends(_get_and_validate_user_token)
     return digital_ocean.get_available_datacenters()
 
 
-@app.get("/status", response_model=List[schemas.Endpoint])
+@app.get("/status", response_model=schemas.Status)
 def get_token_status(token: str = Depends(_get_and_validate_user_token),
                      database: Session = Depends(_get_database)):
     """get a token's usage summary"""
-    endpoints = crud.get_endpoints_by_token(database, token)
-    return endpoints
+    record = crud.get_token_db_record(database, token)
+    funds = record.funds_available
+    endpoints = record.endpoint_count
+    active, estimate = util.estimate_fund_depletion(funds, endpoints)
+    status = schemas.Status(
+        endpoints=crud.get_endpoints_by_token(database, token),
+        funds=funds,
+        # TODO: set to expiration if sooner than est depletion date
+        est_depletion=estimate if active else 9999
+    )
+    return status
 
 
 @app.delete("/endpoint")
